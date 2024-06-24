@@ -25,6 +25,12 @@
         go run main.go
     ```
 
+## Coverage Unit Test
+  - with make file
+  ```sh
+      make cover
+  ```
+
 
 
 ### Connect with me
