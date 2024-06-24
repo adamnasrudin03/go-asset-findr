@@ -1,12 +1,18 @@
 package service
 
 import (
+	"context"
+
 	"github.com/adamnasrudin03/go-asset-findr/app/configs"
+	"github.com/adamnasrudin03/go-asset-findr/app/dto"
 	"github.com/adamnasrudin03/go-asset-findr/app/repository"
+	"github.com/adamnasrudin03/go-template/pkg/helpers"
 	"github.com/sirupsen/logrus"
 )
 
 type PostService interface {
+	GetList(ctx context.Context) ([]dto.PostRes, error)
+	GetDetail(ctx context.Context, req dto.PostGetReq) (*dto.PostRes, error)
 }
 
 type PostSrv struct {
@@ -15,14 +21,59 @@ type PostSrv struct {
 	Logger *logrus.Logger
 }
 
+// NewPostService creates a new instance of PostService.
 func NewPostService(
-	tmRepo repository.PostRepository,
+	postRepo repository.PostRepository,
 	cfg *configs.Configs,
 	logger *logrus.Logger,
 ) PostService {
-	return PostSrv{
-		Repo:   tmRepo,
+	return &PostSrv{
+		Repo:   postRepo,
 		Cfg:    cfg,
 		Logger: logger,
 	}
+}
+
+func (srv *PostSrv) GetList(ctx context.Context) ([]dto.PostRes, error) {
+	var (
+		opName = "PostService-GetList"
+		err    error
+	)
+
+	res, err := srv.Repo.GetAll(ctx)
+	if err != nil {
+		srv.Logger.Errorf("%s failed get data: %v \n", opName, err)
+		return []dto.PostRes{}, helpers.ErrDB()
+	}
+	if len(res) == 0 {
+		return []dto.PostRes{}, nil
+	}
+
+	return res, nil
+}
+
+func (srv *PostSrv) GetDetail(ctx context.Context, req dto.PostGetReq) (*dto.PostRes, error) {
+	var (
+		opName = "PostService-GetDetail"
+		err    error
+	)
+
+	err = req.Validate()
+	if err != nil {
+		srv.Logger.Errorf("%s validate params: %v \n", opName, err)
+		return nil, err
+	}
+
+	res, err := srv.Repo.GetDetail(ctx, req)
+	if err != nil {
+		srv.Logger.Errorf("%s failed get data: %v \n", opName, err)
+		return nil, helpers.ErrDB()
+	}
+
+	isExist := res != nil && res.ID > 0
+	if !isExist {
+		return nil, helpers.ErrNotFound()
+	}
+
+	return res, nil
 }

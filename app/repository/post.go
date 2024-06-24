@@ -37,9 +37,9 @@ func NewPostRepository(
 	}
 }
 
-func (r *PostRepo) FindTags(ctx context.Context, postID uint64) (result []string, err error) {
+func (r *PostRepo) findTags(ctx context.Context, postID uint64) (result []string, err error) {
 	var (
-		opName = "PostRepository-FindTags"
+		opName = "PostRepository-findTags"
 		tags   = []models.Tag{}
 	)
 
@@ -81,7 +81,7 @@ func (r *PostRepo) GetAll(ctx context.Context) (result []dto.PostRes, err error)
 			Title:   v.Title,
 			Content: v.Content,
 		}
-		resTags, err := r.FindTags(ctx, v.ID)
+		resTags, err := r.findTags(ctx, v.ID)
 		if err != nil {
 			r.Logger.Errorf("%s failed get data tags: %v \n", opName, err)
 			return result, err
@@ -121,7 +121,7 @@ func (r *PostRepo) GetDetail(ctx context.Context, req dto.PostGetReq) (*dto.Post
 		Content: post.Content,
 	}
 
-	resTags, err := r.FindTags(ctx, post.ID)
+	resTags, err := r.findTags(ctx, post.ID)
 	if err != nil {
 		r.Logger.Errorf("%s failed get data tags: %v \n", opName, err)
 		return nil, err
