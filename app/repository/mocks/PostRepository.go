@@ -154,6 +154,24 @@ func (_m *PostRepository) GetDetailTag(ctx context.Context, req dto.TagGetReq) (
 	return r0, r1
 }
 
+// UpdateByID provides a mock function with given fields: ctx, req
+func (_m *PostRepository) UpdateByID(ctx context.Context, req dto.PostUpdateReq) error {
+	ret := _m.Called(ctx, req)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateByID")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, dto.PostUpdateReq) error); ok {
+		r0 = rf(ctx, req)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // NewPostRepository creates a new instance of PostRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewPostRepository(t interface {

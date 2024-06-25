@@ -20,6 +20,7 @@ type PostRepository interface {
 	GetDetailTag(ctx context.Context, req dto.TagGetReq) (*models.Tag, error)
 	Create(ctx context.Context, req dto.PostCreateReq) (*dto.PostRes, error)
 	DeleteByID(ctx context.Context, postID uint64) error
+	UpdateByID(ctx context.Context, req dto.PostUpdateReq) error
 }
 
 type PostRepo struct {
@@ -115,11 +116,11 @@ func (r *PostRepo) GetDetail(ctx context.Context, req dto.PostGetReq) (*dto.Post
 	err := query.Select(column).First(&post).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil
+			return nil, helpers.ErrNotFound()
 		}
 
 		r.Logger.Errorf("%s failed get data post: %v \n", opName, err)
-		return nil, err
+		return nil, helpers.ErrDB()
 	}
 
 	result := &dto.PostRes{
@@ -216,33 +217,9 @@ func (r *PostRepo) Create(ctx context.Context, req dto.PostCreateReq) (*dto.Post
 	}
 
 	for _, val := range req.Tags {
-		tag, err := r.GetDetailTag(ctx, dto.TagGetReq{
-			ColumnCustom: "id",
-			Label:        val,
-		})
+		_, err = r.createPostTag(ctx, trx, post.ID, models.Tag{Label: val})
 		if err != nil {
-			r.Logger.Errorf("%s failed get data tags: %v \n", opName, err)
-			return nil, err
-		}
-
-		isExist := tag != nil && tag.ID > 0
-		if !isExist {
-			tag = &models.Tag{
-				Label: val,
-			}
-			err = trx.Clauses(clause.Returning{}).Create(tag).Error
-			if err != nil {
-				r.Logger.Errorf("%s failed create data tags: %v \n", opName, err)
-				return nil, err
-			}
-		}
-
-		err = trx.Create(&models.PostTag{
-			PostID: post.ID,
-			TagID:  tag.ID,
-		}).Error
-		if err != nil {
-			r.Logger.Errorf("%s failed create data post-tag: %v \n", opName, err)
+			r.Logger.Errorf("%s failed create post_tag: %v \n", opName, err)
 			return nil, err
 		}
 
@@ -264,17 +241,13 @@ func (r *PostRepo) DeleteByID(ctx context.Context, postID uint64) error {
 		trx    *gorm.DB
 	)
 
-	post, err := r.GetDetail(ctx, dto.PostGetReq{
+	_, err = r.GetDetail(ctx, dto.PostGetReq{
 		ID:           postID,
 		ColumnCustom: "id",
 	})
 	if err != nil {
 		r.Logger.Errorf("%s failed get data post: %v \n", opName, err)
-		return helpers.ErrDB()
-	}
-
-	if post == nil || post.ID == 0 {
-		return helpers.ErrNotFound()
+		return err
 	}
 
 	trx = r.DB.Begin().WithContext(ctx)
@@ -293,4 +266,90 @@ func (r *PostRepo) DeleteByID(ctx context.Context, postID uint64) error {
 	}
 
 	return nil
+}
+
+func (r *PostRepo) UpdateByID(ctx context.Context, req dto.PostUpdateReq) error {
+	var (
+		opName = "PostRepository-UpdateByID"
+		err    error
+		trx    *gorm.DB
+	)
+
+	_, err = r.GetDetail(ctx, dto.PostGetReq{
+		ID:           req.ID,
+		ColumnCustom: "id",
+	})
+	if err != nil {
+		r.Logger.Errorf("%s failed get data post: %v \n", opName, err)
+		return err
+	}
+
+	trx = r.DB.Begin().WithContext(ctx)
+	defer r.trxEnd(trx, err)
+
+	err = trx.Model(&models.Post{}).Where("id = ?", req.ID).Updates(&models.Post{
+		ID:      req.ID,
+		Title:   req.Title,
+		Content: req.Content,
+	}).Error
+	if err != nil {
+		r.Logger.Errorf("%s failed update data post: %v \n", opName, err)
+		return helpers.ErrDB()
+	}
+
+	err = trx.Where("post_id = ?", req.ID).Delete(&models.PostTag{}).Error
+	if err != nil {
+		r.Logger.Errorf("%s failed delete data post-tag: %v \n", opName, err)
+		return helpers.ErrDB()
+	}
+
+	for _, val := range req.Tags {
+		_, err = r.createPostTag(ctx, trx, req.ID, models.Tag{Label: val})
+		if err != nil {
+			r.Logger.Errorf("%s failed create post_tag: %v \n", opName, err)
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (r *PostRepo) createPostTag(ctx context.Context, trx *gorm.DB, postID uint64, req models.Tag) (*models.Tag, error) {
+	var (
+		opName = "PostRepository-createPostTag"
+		err    error
+	)
+
+	tag, err := r.GetDetailTag(ctx, dto.TagGetReq{
+		ColumnCustom: "id",
+		Label:        req.Label,
+	})
+	if err != nil {
+		r.Logger.Errorf("%s failed get data tags: %v \n", opName, err)
+		return nil, err
+	}
+
+	isExist := tag != nil && tag.ID > 0
+	if !isExist {
+		tag = &models.Tag{
+			Label: req.Label,
+		}
+		err = trx.Clauses(clause.Returning{}).Create(tag).Error
+		if err != nil {
+			r.Logger.Errorf("%s failed create data tags: %v \n", opName, err)
+			return nil, err
+		}
+
+	}
+
+	err = trx.Create(&models.PostTag{
+		PostID: postID,
+		TagID:  tag.ID,
+	}).Error
+	if err != nil {
+		r.Logger.Errorf("%s failed create data post-tag: %v \n", opName, err)
+		return nil, err
+	}
+
+	return tag, nil
 }

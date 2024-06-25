@@ -10,6 +10,7 @@ func (r routes) postRouter(rg *gin.RouterGroup, handler controller.PostControlle
 	{
 		post.GET("/:id", handler.GetDetail)
 		post.DELETE("/:id", handler.Delete)
+		post.PUT("/:id", handler.Update)
 		post.GET("", handler.GetList)
 		post.POST("", handler.Create)
 	}

@@ -33,7 +33,7 @@ func (m *PostUpdateReq) Validate() error {
 	tags := []string{}
 	for _, v := range m.Tags {
 		v = helpers.ToLower(v)
-		if tagsNotDuplicate[v] {
+		if v == "" || tagsNotDuplicate[v] {
 			continue
 		}
 

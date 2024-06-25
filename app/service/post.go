@@ -15,6 +15,7 @@ type PostService interface {
 	GetDetail(ctx context.Context, req dto.PostGetReq) (*dto.PostRes, error)
 	Create(ctx context.Context, req dto.PostCreateReq) (*dto.PostRes, error)
 	DeleteByID(ctx context.Context, postID uint64) error
+	UpdateByID(ctx context.Context, req dto.PostUpdateReq) error
 }
 
 type PostSrv struct {
@@ -109,6 +110,25 @@ func (srv *PostSrv) DeleteByID(ctx context.Context, postID uint64) error {
 	if err != nil {
 		srv.Logger.Errorf("%s failed delete data: %v \n", opName, err)
 		return err
+	}
+
+	return nil
+}
+
+func (srv *PostSrv) UpdateByID(ctx context.Context, req dto.PostUpdateReq) error {
+	var (
+		opName = "PostService-UpdateByID"
+		err    error
+	)
+	err = req.Validate()
+	if err != nil {
+		return err
+	}
+
+	err = srv.Repo.UpdateByID(ctx, req)
+	if err != nil {
+		srv.Logger.Errorf("%s failed update data: %v \n", opName, err)
+		return helpers.ErrUpdatedDB()
 	}
 
 	return nil

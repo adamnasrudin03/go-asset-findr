@@ -17,6 +17,7 @@ type PostController interface {
 	GetDetail(ctx *gin.Context)
 	Create(ctx *gin.Context)
 	Delete(ctx *gin.Context)
+	Update(ctx *gin.Context)
 }
 
 type PostHandler struct {
@@ -122,4 +123,37 @@ func (c *PostHandler) Delete(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, dto.ResponseMessage{Message: "Deleted data post successfully"})
+}
+
+func (c *PostHandler) Update(ctx *gin.Context) {
+	var (
+		opName  = "PostController-Update"
+		idParam = strings.TrimSpace(ctx.Param("id"))
+		input   dto.PostUpdateReq
+		err     error
+	)
+
+	err = ctx.ShouldBindJSON(&input)
+	if err != nil {
+		c.Logger.Errorf("%v error bind json: %v ", opName, err)
+		helpers.RenderJSON(ctx.Writer, http.StatusBadRequest, helpers.ErrGetRequest())
+		return
+	}
+
+	id, err := strconv.ParseUint(idParam, 10, 32)
+	if err != nil {
+		c.Logger.Errorf("%v error parse param: %v ", opName, err)
+		helpers.RenderJSON(ctx.Writer, http.StatusBadRequest, helpers.ErrInvalid("ID Post", "Post ID"))
+		return
+	}
+
+	input.ID = id
+	err = c.Service.UpdateByID(ctx, input)
+	if err != nil {
+		c.Logger.Errorf("%v error: %v ", opName, err)
+		helpers.RenderJSON(ctx.Writer, http.StatusInternalServerError, err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, dto.ResponseMessage{Message: "Updated data post successfully"})
 }
