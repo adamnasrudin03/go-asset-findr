@@ -10,6 +10,7 @@ import (
 	"github.com/adamnasrudin03/go-asset-findr/app/dto"
 	"github.com/adamnasrudin03/go-asset-findr/app/repository/mocks"
 	"github.com/adamnasrudin03/go-asset-findr/pkg/driver"
+	"github.com/adamnasrudin03/go-template/pkg/helpers"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )
@@ -275,6 +276,68 @@ func (srv *PostServiceTestSuite) TestPostSrv_DeleteByID() {
 
 			if err := srv.service.DeleteByID(srv.ctx, tt.postID); (err != nil) != tt.wantErr {
 				t.Errorf("PostSrv.DeleteByID() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func (srv *PostServiceTestSuite) TestPostSrv_UpdateByID() {
+
+	tests := []struct {
+		name     string
+		req      dto.PostUpdateReq
+		mockFunc func(input dto.PostUpdateReq)
+		wantErr  bool
+	}{
+		{
+			name: "invalid request",
+			req: dto.PostUpdateReq{
+				ID:      101,
+				Title:   "",
+				Content: "",
+				Tags:    []string{},
+			},
+			mockFunc: func(input dto.PostUpdateReq) {
+			},
+			wantErr: true,
+		},
+		{
+			name: "err db",
+			req: dto.PostUpdateReq{
+				ID:      101,
+				Title:   "title test 101",
+				Content: "content test 101",
+				Tags:    []string{"tags1", "tags2"},
+			},
+			mockFunc: func(input dto.PostUpdateReq) {
+				input.Validate()
+				srv.repo.On("UpdateByID", mock.Anything, input).Return(helpers.ErrNotFound()).Once()
+			},
+			wantErr: true,
+		},
+		{
+			name: "Success",
+			req: dto.PostUpdateReq{
+				ID:      101,
+				Title:   "title test 101",
+				Content: "content test 101",
+				Tags:    []string{"tags1", "tags2"},
+			},
+			mockFunc: func(input dto.PostUpdateReq) {
+				input.Validate()
+				srv.repo.On("UpdateByID", mock.Anything, input).Return(nil).Once()
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		srv.T().Run(tt.name, func(t *testing.T) {
+			if tt.mockFunc != nil {
+				tt.mockFunc(tt.req)
+			}
+
+			if err := srv.service.UpdateByID(srv.ctx, tt.req); (err != nil) != tt.wantErr {
+				t.Errorf("PostSrv.UpdateByID() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
