@@ -72,12 +72,7 @@ func (srv *PostSrv) GetDetail(ctx context.Context, req dto.PostGetReq) (*dto.Pos
 	res, err := srv.Repo.GetDetail(ctx, req)
 	if err != nil {
 		srv.Logger.Errorf("%s failed get data: %v \n", opName, err)
-		return nil, helpers.ErrDB()
-	}
-
-	isExist := res != nil && res.ID > 0
-	if !isExist {
-		return nil, helpers.ErrNotFound()
+		return nil, err
 	}
 
 	res.CheckResp()

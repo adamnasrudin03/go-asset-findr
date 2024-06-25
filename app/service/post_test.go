@@ -73,17 +73,6 @@ func (srv *PostServiceTestSuite) TestPostSrv_GetDetail() {
 			wantErr: true,
 		},
 		{
-			name: "not found",
-			req: dto.PostGetReq{
-				ID: 101,
-			},
-			mockFunc: func(input dto.PostGetReq) {
-				srv.repo.On("GetDetail", mock.Anything, input).Return(nil, nil).Once()
-			},
-			want:    nil,
-			wantErr: true,
-		},
-		{
 			name: "success",
 			req: dto.PostGetReq{
 				ID: 101,
