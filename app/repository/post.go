@@ -177,15 +177,17 @@ func (r *PostRepo) GetDetailTag(ctx context.Context, req dto.TagGetReq) (*models
 
 func (r *PostRepo) trxEnd(trx *gorm.DB, err error) {
 	if rc := recover(); rc != nil {
-		r.Logger.Errorf(`Panic Error %v`, r)
+		r.Logger.Errorf(`trxEnd Panic Error %v`, r)
 		trx.Rollback()
 		return
 	}
 	if err != nil {
+		r.Logger.Errorf(`trxEnd Error %v`, err)
 		trx.Rollback()
 		return
 	}
 	if err := trx.Commit(); err != nil {
+		r.Logger.Errorf(`trxEnd err commit %v`, err)
 		trx.Rollback()
 		return
 	}
