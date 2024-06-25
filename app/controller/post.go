@@ -15,6 +15,7 @@ import (
 type PostController interface {
 	GetList(ctx *gin.Context)
 	GetDetail(ctx *gin.Context)
+	Create(ctx *gin.Context)
 }
 
 type PostHandler struct {
@@ -72,4 +73,28 @@ func (c *PostHandler) GetDetail(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, res)
+}
+
+func (c *PostHandler) Create(ctx *gin.Context) {
+	var (
+		opName = "UserDelivery-Create"
+		input  dto.PostCreateReq
+		err    error
+	)
+
+	err = ctx.ShouldBindJSON(&input)
+	if err != nil {
+		c.Logger.Errorf("%v error bind json: %v ", opName, err)
+		helpers.RenderJSON(ctx.Writer, http.StatusBadRequest, helpers.ErrGetRequest())
+		return
+	}
+
+	res, err := c.Service.Create(ctx, input)
+	if err != nil {
+		c.Logger.Errorf("%v error: %v ", opName, err)
+		helpers.RenderJSON(ctx.Writer, http.StatusInternalServerError, err)
+		return
+	}
+
+	ctx.JSON(http.StatusCreated, res)
 }

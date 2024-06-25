@@ -16,6 +16,36 @@ type PostRepository struct {
 	mock.Mock
 }
 
+// Create provides a mock function with given fields: ctx, req
+func (_m *PostRepository) Create(ctx context.Context, req dto.PostCreateReq) (*dto.PostRes, error) {
+	ret := _m.Called(ctx, req)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Create")
+	}
+
+	var r0 *dto.PostRes
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, dto.PostCreateReq) (*dto.PostRes, error)); ok {
+		return rf(ctx, req)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, dto.PostCreateReq) *dto.PostRes); ok {
+		r0 = rf(ctx, req)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*dto.PostRes)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, dto.PostCreateReq) error); ok {
+		r1 = rf(ctx, req)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetAll provides a mock function with given fields: ctx
 func (_m *PostRepository) GetAll(ctx context.Context) ([]dto.PostRes, error) {
 	ret := _m.Called(ctx)

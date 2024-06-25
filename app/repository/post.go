@@ -11,12 +11,14 @@ import (
 	"github.com/adamnasrudin03/go-template/pkg/helpers"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type PostRepository interface {
 	GetAll(ctx context.Context) (result []dto.PostRes, err error)
 	GetDetail(ctx context.Context, req dto.PostGetReq) (*dto.PostRes, error)
 	GetDetailTag(ctx context.Context, req dto.TagGetReq) (*models.Tag, error)
+	Create(ctx context.Context, req dto.PostCreateReq) (*dto.PostRes, error)
 }
 
 type PostRepo struct {
@@ -166,4 +168,79 @@ func (r *PostRepo) GetDetailTag(ctx context.Context, req dto.TagGetReq) (*models
 	}
 
 	return &result, nil
+}
+
+func (r *PostRepo) Create(ctx context.Context, req dto.PostCreateReq) (*dto.PostRes, error) {
+	var (
+		opName = "PostRepository-Create"
+		err    error
+		trx    *gorm.DB
+		post   = models.Post{
+			Title:   req.Title,
+			Content: req.Content,
+		}
+	)
+
+	trx = r.DB.Begin().WithContext(ctx)
+	defer func() {
+		if rc := recover(); rc != nil {
+			r.Logger.Errorf(`%s Panic Error %v`, opName, r)
+			trx.Rollback()
+			return
+		}
+		if err != nil {
+			trx.Rollback()
+			return
+		}
+		if err := trx.Commit(); err != nil {
+			return
+		}
+	}()
+
+	err = trx.Clauses(clause.Returning{}).Create(&post).Error
+	if err != nil {
+		r.Logger.Errorf("%s failed create data: %v \n", opName, err)
+		return nil, err
+	}
+
+	for _, val := range req.Tags {
+		tag, err := r.GetDetailTag(ctx, dto.TagGetReq{
+			ColumnCustom: "id",
+			Label:        val,
+		})
+		if err != nil {
+			r.Logger.Errorf("%s failed get data tags: %v \n", opName, err)
+			return nil, err
+		}
+
+		isExist := tag != nil && tag.ID > 0
+		if !isExist {
+			tag = &models.Tag{
+				Label: val,
+			}
+			err = trx.Clauses(clause.Returning{}).Create(tag).Error
+			if err != nil {
+				r.Logger.Errorf("%s failed create data tags: %v \n", opName, err)
+				return nil, err
+			}
+		}
+
+		err = trx.Create(&models.PostTag{
+			PostID: post.ID,
+			TagID:  tag.ID,
+		}).Error
+		if err != nil {
+			r.Logger.Errorf("%s failed create data post-tag: %v \n", opName, err)
+			return nil, err
+		}
+
+	}
+
+	result := &dto.PostRes{
+		ID:      post.ID,
+		Title:   post.Title,
+		Content: post.Content,
+		Tags:    req.Tags,
+	}
+	return result, nil
 }

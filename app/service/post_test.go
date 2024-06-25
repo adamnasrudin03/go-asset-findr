@@ -39,7 +39,7 @@ func TestPostService(t *testing.T) {
 func (srv *PostServiceTestSuite) TestPostSrv_GetDetail() {
 	resp := &dto.PostRes{
 		ID:      101,
-		Title:   "test title",
+		Title:   "Title Test",
 		Content: "test content",
 		Tags:    []string{"tag1", "tag2"},
 	}
@@ -117,9 +117,15 @@ func (srv *PostServiceTestSuite) TestPostSrv_GetList() {
 	resp := []dto.PostRes{
 		{
 			ID:      101,
-			Title:   "test title",
+			Title:   "Test Title",
 			Content: "test content",
 			Tags:    []string{"tag1", "tag2"},
+		},
+		{
+			ID:      102,
+			Title:   "Test Title 102",
+			Content: "test content 102",
+			Tags:    []string{},
 		},
 	}
 

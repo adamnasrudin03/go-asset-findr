@@ -9,7 +9,8 @@ func (r routes) postRouter(rg *gin.RouterGroup, handler controller.PostControlle
 	post := rg.Group("/posts")
 	{
 		post.GET("/:id", handler.GetDetail)
-		post.GET("/", handler.GetList)
+		post.GET("", handler.GetList)
+		post.POST("", handler.Create)
 	}
 
 }

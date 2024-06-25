@@ -13,6 +13,7 @@ import (
 type PostService interface {
 	GetList(ctx context.Context) ([]dto.PostRes, error)
 	GetDetail(ctx context.Context, req dto.PostGetReq) (*dto.PostRes, error)
+	Create(ctx context.Context, req dto.PostCreateReq) (*dto.PostRes, error)
 }
 
 type PostSrv struct {
@@ -49,6 +50,10 @@ func (srv *PostSrv) GetList(ctx context.Context) ([]dto.PostRes, error) {
 		return []dto.PostRes{}, nil
 	}
 
+	for i, _ := range res {
+		res[i].CheckResp()
+	}
+
 	return res, nil
 }
 
@@ -60,7 +65,6 @@ func (srv *PostSrv) GetDetail(ctx context.Context, req dto.PostGetReq) (*dto.Pos
 
 	err = req.Validate()
 	if err != nil {
-		srv.Logger.Errorf("%s validate params: %v \n", opName, err)
 		return nil, err
 	}
 
@@ -75,5 +79,25 @@ func (srv *PostSrv) GetDetail(ctx context.Context, req dto.PostGetReq) (*dto.Pos
 		return nil, helpers.ErrNotFound()
 	}
 
+	res.CheckResp()
 	return res, nil
+}
+
+func (srv *PostSrv) Create(ctx context.Context, req dto.PostCreateReq) (*dto.PostRes, error) {
+	var (
+		opName = "PostService-Create"
+		err    error
+	)
+
+	err = req.Validate()
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := srv.Repo.Create(ctx, req)
+	if err != nil {
+		srv.Logger.Errorf("%s failed create data: %v \n", opName, err)
+		return nil, helpers.ErrDB()
+	}
+	return result, nil
 }
