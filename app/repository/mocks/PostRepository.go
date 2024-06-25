@@ -46,6 +46,24 @@ func (_m *PostRepository) Create(ctx context.Context, req dto.PostCreateReq) (*d
 	return r0, r1
 }
 
+// DeleteByID provides a mock function with given fields: ctx, postID
+func (_m *PostRepository) DeleteByID(ctx context.Context, postID uint64) error {
+	ret := _m.Called(ctx, postID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteByID")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, uint64) error); ok {
+		r0 = rf(ctx, postID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // GetAll provides a mock function with given fields: ctx
 func (_m *PostRepository) GetAll(ctx context.Context) ([]dto.PostRes, error) {
 	ret := _m.Called(ctx)

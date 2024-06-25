@@ -16,6 +16,7 @@ type PostController interface {
 	GetList(ctx *gin.Context)
 	GetDetail(ctx *gin.Context)
 	Create(ctx *gin.Context)
+	Delete(ctx *gin.Context)
 }
 
 type PostHandler struct {
@@ -34,7 +35,7 @@ func NewPostDelivery(
 }
 func (c *PostHandler) GetList(ctx *gin.Context) {
 	var (
-		opName = "UserDelivery-GetList"
+		opName = "PostController-GetList"
 		resp   = []dto.PostRes{}
 		err    error
 	)
@@ -50,7 +51,7 @@ func (c *PostHandler) GetList(ctx *gin.Context) {
 
 func (c *PostHandler) GetDetail(ctx *gin.Context) {
 	var (
-		opName  = "UserDelivery-GetDetail"
+		opName  = "PostController-GetDetail"
 		idParam = strings.TrimSpace(ctx.Param("id"))
 		err     error
 	)
@@ -77,7 +78,7 @@ func (c *PostHandler) GetDetail(ctx *gin.Context) {
 
 func (c *PostHandler) Create(ctx *gin.Context) {
 	var (
-		opName = "UserDelivery-Create"
+		opName = "PostController-Create"
 		input  dto.PostCreateReq
 		err    error
 	)
@@ -97,4 +98,28 @@ func (c *PostHandler) Create(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusCreated, res)
+}
+
+func (c *PostHandler) Delete(ctx *gin.Context) {
+	var (
+		opName  = "PostController-Delete"
+		idParam = strings.TrimSpace(ctx.Param("id"))
+		err     error
+	)
+
+	id, err := strconv.ParseUint(idParam, 10, 32)
+	if err != nil {
+		c.Logger.Errorf("%v error parse param: %v ", opName, err)
+		helpers.RenderJSON(ctx.Writer, http.StatusBadRequest, helpers.ErrInvalid("ID Post", "Post ID"))
+		return
+	}
+
+	err = c.Service.DeleteByID(ctx, id)
+	if err != nil {
+		c.Logger.Errorf("%v error: %v ", opName, err)
+		helpers.RenderJSON(ctx.Writer, http.StatusInternalServerError, err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, dto.ResponseMessage{Message: "Deleted data post successfully"})
 }

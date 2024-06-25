@@ -14,6 +14,7 @@ type PostService interface {
 	GetList(ctx context.Context) ([]dto.PostRes, error)
 	GetDetail(ctx context.Context, req dto.PostGetReq) (*dto.PostRes, error)
 	Create(ctx context.Context, req dto.PostCreateReq) (*dto.PostRes, error)
+	DeleteByID(ctx context.Context, postID uint64) error
 }
 
 type PostSrv struct {
@@ -101,4 +102,19 @@ func (srv *PostSrv) Create(ctx context.Context, req dto.PostCreateReq) (*dto.Pos
 	}
 	result.CheckResp()
 	return result, nil
+}
+
+func (srv *PostSrv) DeleteByID(ctx context.Context, postID uint64) error {
+	var (
+		opName = "PostService-DeleteByID"
+		err    error
+	)
+
+	err = srv.Repo.DeleteByID(ctx, postID)
+	if err != nil {
+		srv.Logger.Errorf("%s failed delete data: %v \n", opName, err)
+		return err
+	}
+
+	return nil
 }

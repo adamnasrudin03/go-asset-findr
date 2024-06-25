@@ -19,6 +19,7 @@ type PostRepository interface {
 	GetDetail(ctx context.Context, req dto.PostGetReq) (*dto.PostRes, error)
 	GetDetailTag(ctx context.Context, req dto.TagGetReq) (*models.Tag, error)
 	Create(ctx context.Context, req dto.PostCreateReq) (*dto.PostRes, error)
+	DeleteByID(ctx context.Context, postID uint64) error
 }
 
 type PostRepo struct {
@@ -174,6 +175,21 @@ func (r *PostRepo) GetDetailTag(ctx context.Context, req dto.TagGetReq) (*models
 	return &result, nil
 }
 
+func (r *PostRepo) trxEnd(trx *gorm.DB, err error) {
+	if rc := recover(); rc != nil {
+		r.Logger.Errorf(`Panic Error %v`, r)
+		trx.Rollback()
+		return
+	}
+	if err != nil {
+		trx.Rollback()
+		return
+	}
+	if err := trx.Commit(); err != nil {
+		return
+	}
+}
+
 func (r *PostRepo) Create(ctx context.Context, req dto.PostCreateReq) (*dto.PostRes, error) {
 	var (
 		opName = "PostRepository-Create"
@@ -187,18 +203,7 @@ func (r *PostRepo) Create(ctx context.Context, req dto.PostCreateReq) (*dto.Post
 
 	trx = r.DB.Begin().WithContext(ctx)
 	defer func() {
-		if rc := recover(); rc != nil {
-			r.Logger.Errorf(`%s Panic Error %v`, opName, r)
-			trx.Rollback()
-			return
-		}
-		if err != nil {
-			trx.Rollback()
-			return
-		}
-		if err := trx.Commit(); err != nil {
-			return
-		}
+		r.trxEnd(trx, err)
 	}()
 
 	err = trx.Clauses(clause.Returning{}).Create(&post).Error
@@ -247,4 +252,42 @@ func (r *PostRepo) Create(ctx context.Context, req dto.PostCreateReq) (*dto.Post
 		Tags:    req.Tags,
 	}
 	return result, nil
+}
+
+func (r *PostRepo) DeleteByID(ctx context.Context, postID uint64) error {
+	var (
+		opName = "PostRepository-DeleteByID"
+		err    error
+		trx    *gorm.DB
+	)
+
+	post, err := r.GetDetail(ctx, dto.PostGetReq{
+		ID:           postID,
+		ColumnCustom: "id",
+	})
+	if err != nil {
+		r.Logger.Errorf("%s failed get data post: %v \n", opName, err)
+		return helpers.ErrDB()
+	}
+
+	if post == nil || post.ID == 0 {
+		return helpers.ErrNotFound()
+	}
+
+	trx = r.DB.Begin().WithContext(ctx)
+	defer r.trxEnd(trx, err)
+
+	err = trx.Where("post_id = ?", postID).Delete(&models.PostTag{}).Error
+	if err != nil {
+		r.Logger.Errorf("%s failed delete data post-tag: %v \n", opName, err)
+		return helpers.ErrDB()
+	}
+
+	err = trx.Where("id = ?", postID).Delete(&models.Post{}).Error
+	if err != nil {
+		r.Logger.Errorf("%s failed delete data post: %v \n", opName, err)
+		return helpers.ErrDB()
+	}
+
+	return nil
 }

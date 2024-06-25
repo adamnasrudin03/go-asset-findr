@@ -252,3 +252,41 @@ func (srv *PostServiceTestSuite) TestPostSrv_Create() {
 		})
 	}
 }
+
+func (srv *PostServiceTestSuite) TestPostSrv_DeleteByID() {
+
+	tests := []struct {
+		name     string
+		postID   uint64
+		mockFunc func(input uint64)
+		wantErr  bool
+	}{
+		{
+			name:   "err db",
+			postID: 101,
+			mockFunc: func(input uint64) {
+				srv.repo.On("DeleteByID", mock.Anything, input).Return(errors.New("db error")).Once()
+			},
+			wantErr: true,
+		},
+		{
+			name:   "Success",
+			postID: 101,
+			mockFunc: func(input uint64) {
+				srv.repo.On("DeleteByID", mock.Anything, input).Return(nil).Once()
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		srv.T().Run(tt.name, func(t *testing.T) {
+			if tt.mockFunc != nil {
+				tt.mockFunc(tt.postID)
+			}
+
+			if err := srv.service.DeleteByID(srv.ctx, tt.postID); (err != nil) != tt.wantErr {
+				t.Errorf("PostSrv.DeleteByID() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
