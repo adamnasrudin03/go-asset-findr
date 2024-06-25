@@ -50,7 +50,7 @@ func (srv *PostSrv) GetList(ctx context.Context) ([]dto.PostRes, error) {
 		return []dto.PostRes{}, nil
 	}
 
-	for i, _ := range res {
+	for i := range res {
 		res[i].CheckResp()
 	}
 
