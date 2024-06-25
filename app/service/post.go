@@ -128,7 +128,7 @@ func (srv *PostSrv) UpdateByID(ctx context.Context, req dto.PostUpdateReq) error
 	err = srv.Repo.UpdateByID(ctx, req)
 	if err != nil {
 		srv.Logger.Errorf("%s failed update data: %v \n", opName, err)
-		return helpers.ErrUpdatedDB()
+		return err
 	}
 
 	return nil

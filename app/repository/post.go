@@ -174,7 +174,7 @@ func (r *PostRepo) GetDetailTag(ctx context.Context, req dto.TagGetReq) (*models
 		}
 
 		r.Logger.Errorf("%s failed get data: %v \n", opName, err)
-		return nil, err
+		return nil, helpers.ErrDB()
 	}
 
 	return &result, nil
@@ -298,13 +298,13 @@ func (r *PostRepo) UpdateByID(ctx context.Context, req dto.PostUpdateReq) error 
 	}).Error
 	if err != nil {
 		r.Logger.Errorf("%s failed update data post: %v \n", opName, err)
-		return helpers.ErrDB()
+		return helpers.ErrUpdatedDB()
 	}
 
 	err = trx.Where("post_id = ?", req.ID).Delete(&models.PostTag{}).Error
 	if err != nil {
 		r.Logger.Errorf("%s failed delete data post-tag: %v \n", opName, err)
-		return helpers.ErrDB()
+		return helpers.ErrUpdatedDB()
 	}
 
 	for _, val := range req.Tags {
@@ -341,9 +341,8 @@ func (r *PostRepo) createPostTag(ctx context.Context, trx *gorm.DB, postID uint6
 		err = trx.Clauses(clause.Returning{}).Create(tag).Error
 		if err != nil {
 			r.Logger.Errorf("%s failed create data tags: %v \n", opName, err)
-			return nil, err
+			return nil, helpers.ErrDB()
 		}
-
 	}
 
 	err = trx.Create(&models.PostTag{
@@ -352,7 +351,7 @@ func (r *PostRepo) createPostTag(ctx context.Context, trx *gorm.DB, postID uint6
 	}).Error
 	if err != nil {
 		r.Logger.Errorf("%s failed create data post-tag: %v \n", opName, err)
-		return nil, err
+		return nil, helpers.ErrDB()
 	}
 
 	return tag, nil
