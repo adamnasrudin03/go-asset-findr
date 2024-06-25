@@ -101,13 +101,17 @@ func (r *PostRepo) GetDetail(ctx context.Context, req dto.PostGetReq) (*dto.Post
 		opName = "PostRepository-GetDetail"
 		query  = r.DB.WithContext(ctx)
 		post   = models.Post{}
+		column = "*"
 	)
+	if req.ColumnCustom != "" {
+		column = req.ColumnCustom
+	}
 
 	if req.ID != 0 {
 		query = query.Where("id = ?", req.ID)
 	}
 
-	err := query.First(&post).Error
+	err := query.Select(column).First(&post).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
