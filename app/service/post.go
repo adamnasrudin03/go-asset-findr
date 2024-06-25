@@ -97,7 +97,7 @@ func (srv *PostSrv) Create(ctx context.Context, req dto.PostCreateReq) (*dto.Pos
 	result, err := srv.Repo.Create(ctx, req)
 	if err != nil {
 		srv.Logger.Errorf("%s failed create data: %v \n", opName, err)
-		return nil, helpers.ErrDB()
+		return nil, helpers.ErrCreatedDB()
 	}
 	result.CheckResp()
 	return result, nil
