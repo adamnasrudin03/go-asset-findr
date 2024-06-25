@@ -1,6 +1,9 @@
 # go-asset-findr
  Skeleton project golang with framework <a href="https://gin-gonic.com/" target="_blank"> Gin / Gin-gonic </a>
 
+## ERD
+![ERD Relation many to many post tag](./erd_post_tag.png)
+
  
 ## Development Guide
 
