@@ -129,6 +129,10 @@ func (r *PostRepo) GetDetail(ctx context.Context, req dto.PostGetReq) (*dto.Post
 		Content: post.Content,
 	}
 
+	if column != "*" {
+		return result, nil
+	}
+
 	resTags, err := r.findTags(ctx, post.ID)
 	if err != nil {
 		r.Logger.Errorf("%s failed get data tags: %v \n", opName, err)
