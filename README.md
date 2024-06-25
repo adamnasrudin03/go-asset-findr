@@ -4,6 +4,9 @@
 ## ERD
 ![ERD Relation many to many post tag](./erd_post_tag.png)
 
+## Api Doc
+<a href="https://documenter.getpostman.com/view/10619265/2sA3XY7xuE" target="_blank"> Postman API Documentation </a>
+
  
 ## Development Guide
 
