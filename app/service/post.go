@@ -99,5 +99,6 @@ func (srv *PostSrv) Create(ctx context.Context, req dto.PostCreateReq) (*dto.Pos
 		srv.Logger.Errorf("%s failed create data: %v \n", opName, err)
 		return nil, helpers.ErrDB()
 	}
+	result.CheckResp()
 	return result, nil
 }

@@ -176,3 +176,79 @@ func (srv *PostServiceTestSuite) TestPostSrv_GetList() {
 		})
 	}
 }
+
+func (srv *PostServiceTestSuite) TestPostSrv_Create() {
+	resp := &dto.PostRes{
+		ID:      1,
+		Title:   "title 1",
+		Content: "content 2",
+		Tags:    []string{"tags1", "tags2", "tags1"},
+	}
+	resp.CheckResp()
+
+	tests := []struct {
+		name     string
+		req      dto.PostCreateReq
+		mockFunc func(input dto.PostCreateReq)
+		want     *dto.PostRes
+		wantErr  bool
+	}{
+		{
+			name: "invalid input",
+			req: dto.PostCreateReq{
+				Title:   "",
+				Content: "",
+				Tags:    []string{},
+			},
+			mockFunc: func(input dto.PostCreateReq) {
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "failed create db",
+			req: dto.PostCreateReq{
+				Title:   "title 1",
+				Content: "content 2",
+				Tags:    []string{"tags1", "tags2", "tags1"},
+			},
+			mockFunc: func(input dto.PostCreateReq) {
+				input.Validate()
+				srv.repo.On("Create", mock.Anything, input).Return(nil, errors.New("db error")).Once()
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "success",
+			req: dto.PostCreateReq{
+				Title:   "title 1",
+				Content: "content 2",
+				Tags:    []string{"tags1", "tags2", "tags1"},
+			},
+			mockFunc: func(input dto.PostCreateReq) {
+				input.Validate()
+				srv.repo.On("Create", mock.Anything, input).Return(resp, nil).Once()
+			},
+			want:    resp,
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		srv.T().Run(tt.name, func(t *testing.T) {
+			if tt.mockFunc != nil {
+				tt.mockFunc(tt.req)
+			}
+
+			got, err := srv.service.Create(srv.ctx, tt.req)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("PostSrv.Create() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("PostSrv.Create() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
