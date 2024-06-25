@@ -186,6 +186,7 @@ func (r *PostRepo) trxEnd(trx *gorm.DB, err error) {
 		return
 	}
 	if err := trx.Commit(); err != nil {
+		trx.Rollback()
 		return
 	}
 }
